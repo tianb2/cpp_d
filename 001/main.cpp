@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <iterator>
 
@@ -195,9 +196,7 @@ int main() {
   // adding constructors to enforce it from the beginning
 
   struct OkClass {
-    OkClass() {
-      year = 2019;
-    }
+    OkClass() { year = 2019; }
 
     OkClass(int year_in) {
       if (!set_year(year_in)) {
@@ -226,6 +225,113 @@ int main() {
   printf("ok3, year %d\n", ok3.get_year());
 
   sp("initialization");
+  // palatable narrative of c++ initialization
 
+  // init to 0
+  int aa = 0;  // literal, ok
+  int bb{};    // brace, ok
+  int cc = {}; // equal and brace, ok
+  int dd;      // maybe not ok
+  printf("aa=%d, bb=%d, cc=%d, dd=%d\n", aa, bb, cc, dd);
+
+  // braced intialization is always working
+
+  // init to an arbitrary value
+  // all these 4 ways produce identical code
+  int ee = 42;   // equals
+  int ff{42};    // braced initialization
+  int gg = {42}; // equals-plus-braces initialization
+  int hh(42);    // parentheses
+  printf("ee=%d, ff=%d, gg=%d, hh=%d\n", ee, ff, gg, hh);
+
+  // init PODs
+  struct PodStruct {
+    uint64_t a;
+    char b[256];
+    bool c;
+  };
+
+  PodStruct p1{};    // all fields zeroed
+  PodStruct p2 = {}; // identical
+
+  PodStruct p3{42, "Hello"}; // c zeroed
+  PodStruct p4 = {
+      42, "Hello"}; // identical
+                    // the equals-plus-braces initialization works identical
+
+  // you can only omit fields from right to left
+  /*PodStruct p5{42, true}; // try to omit fields b but this won't work */
+  /*printf("p5, a=%llu, b=%s, c=%d\n", p5.a, p5.b, p5.c);*/
+
+  // init arrays
+  int arr1[]{1, 2, 3};  // array of length 3; [1, 2, 3]
+  int arr2[5]{};        // array of length 5; [0,0,0,0,0]
+  int arr3[5]{1, 2, 3}; // array of length 5; [1,2,3,0,0]
+  int arr4[5];          // array of length 5; uninitialized values
+
+  // init fully featured classes
+  // unlike fundamental types and PODs, fully featured classes are always
+  // initialized.
+  // in other words, one of a fully featured class's constructors always
+  // called during initialization.
+  // which constructor is called depends on the arguments given during
+  // initialization.
+
+  sp("init fully featured classes");
+  struct A {
+    A() { printf("(no arg)\n"); }
+
+    A(char x) { printf("(char: %c)\n", x); }
+
+    A(int x) { printf("(int: %d)\n", x); }
+
+    A(float x) { printf("(float: %f)\n", x); }
+  };
+
+  A b1;
+  A b2{'c'};
+  A b3{65537};
+  A b4{6.02e23f};
+  A b5('g');    // also works
+  A b6 = {'l'}; // also works, invoke the expected constructor
+  A b7{};       // also works as b1
+  // A b8(); // nope, wont' work. this is parsed as a function declaration
+
+  // narrowing conversions
+  float ff1{1};
+  float ff2{2};
+  int res1(ff1 / ff2); // potentially nasty narrowing without warning
+  /*int res2{ff1 / ff2}; // narrowing with warning (or compiler error) won't compile here */
+  int res2{static_cast<int>(ff1 / ff2)}; // narrowing with warning (or compiler error)
+
+  printf("res2 %d\n", res2);
+
+  // init class members
+  struct Classs {
+    bool a = true; // equals init
+    int b{1}; // braced init
+    char s[8] = {"x-rated"};  // braces-plus-equals init, need to specify length explicitly for members
+  };
+
+  Classs ccc;
+  printf("a=%d, b=%d, s=%s\n", ccc.a, ccc.b, ccc.s);
+
+  // general rule: use the braced init (uniform initialization) everywhere by default
+  // except for certain classes in stdlib
+
+  // destructors
+  // almost never called explicitly
+  // for actions include releasing file handles, flushing network sockets, and freeing dynamic objects.
+  // compiler will generate one that does nothing if you don't specify one
+
+  struct Clazz {
+    Clazz() {
+      printf("Clazz init\n");
+    }
+    ~Clazz() {
+      printf("Clazz destructor called\n");
+    }
+  };
+  Clazz z;
   return 0;
 }
